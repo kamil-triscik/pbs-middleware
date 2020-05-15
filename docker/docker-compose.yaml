@@ -1,0 +1,165 @@
+version: '3'
+services:
+  db:
+    image: postgres:latest
+    container_name: Postgres.DB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    #      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_PASSWORD=llm
+      - POSTGRES_USER=llm
+      - POSTGRES_DB=llmdb
+    ports:
+      - "5432:5432"
+
+  mongo:
+    image: mongo
+    container_name: Mongo.DB
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: llm
+      MONGO_INITDB_ROOT_PASSWORD: llm
+
+  mongo-express:
+    image: mongo-express
+    container_name: Mongo.Express
+    restart: always
+    ports:
+      - 8082:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: llm
+      ME_CONFIG_MONGODB_ADMINPASSWORD: llm
+
+  adminer:
+    image: adminer
+    container_name: Adminer
+    restart: always
+    expose:
+      - 8090
+    ports:
+      - 8090:8080
+
+  llm-middleware:
+    image: llmiddleware/llm_server:mongo
+    container_name: LLM.Server
+    links:
+      - db
+    expose:
+      - 8086
+      - 1096
+      - 5005
+    ports:
+      - "8080:8080"
+      - "1096:1096"
+      - "5005:5005"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MIDDLEWARE_SERVER_APPLICATION_NAME=LL Middleware Server
+      - MIDDLEWARE_SERVER_APPLICATION_PORT=8080
+      - MIDDLEWARE_SERVER_FEATURES_JOB_MONITORING_THREADS=4
+      - MIDDLEWARE_SERVER_FEATURES_JOB_MONITORING_DELAY=600
+      - MIDDLEWARE_SERVER_FEATURES_SCRIPT_TEMPLATE_PATH=/var/llm/resources/template.groovy
+      - MIDDLEWARE_SERVER_FEATURES_SCRIPT_TEMPLATE_REPLACE=<REPLACE>
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_MAXFILESIZE=100MB
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_MAXREQUESTSIZE=500MB
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_TEMPORARYSTORAGE=/var/llm/llmtemp
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_UPLOAD_LIMIT_NOTIFICATION=PT30M
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_UPLOAD_RETENTION=P3D
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_UPLOAD_MONITOR_DELAY=1200
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_DOWNLOAD_LIMIT_NOTIFICATION=PT30M
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_DOWNLOAD_RETENTION=P3D
+      - MIDDLEWARE_SERVER_FEATURES_TRANSFER_DOWNLOAD_MONITOR_DELAY=1200
+      - MIDDLEWARE_SERVER_FEATURES_CONNECTION_HEALTH_INTERVAL=600
+      - MIDDLEWARE_SERVER_FEATURES_CONNECTION_HEALTH_COMMAND=ls
+      - MIDDLEWARE_SERVER_DB_PSQL_URL=jdbc:postgresql://db:5432/llmdb
+      - MIDDLEWARE_SERVER_DB_PSQL_DRIVER=org.postgresql.Driver
+      - MIDDLEWARE_SERVER_DB_PSQL_USERNAME=llm
+      - MIDDLEWARE_SERVER_DB_PSQL_PASSWORD=llm
+      - MIDDLEWARE_SERVER_DB_MONGO_NAME=llm
+      - MIDDLEWARE_SERVER_DB_MONGO_HOST=mongo
+      - MIDDLEWARE_SERVER_DB_MONGO_PORT=27017
+      - MIDDLEWARE_SERVER_DB_MONGO_USER=llm
+      - MIDDLEWARE_SERVER_DB_MONGO_PASSWORd=llm
+      - MIDDLEWARE_SERVER_DB_MONGO_DATABASE=admin
+      - MIDDLEWARE_SERVER_SECURITY_DEFAULT_ADMIN_USERNAME=admin
+      - MIDDLEWARE_SERVER_SECURITY_DEFAULT_ADMIN_PASSWORD=1234
+      - MIDDLEWARE_SERVER_SECURITY_DEFAULT_ADMIN_FIRSTNAME=Super
+      - MIDDLEWARE_SERVER_SECURITY_DEFAULT_ADMIN_LASTNAME=Admin
+      - MIDDLEWARE_SERVER_SECURITY_DEFAULT_ADMIN_EMAIL=admin@localhost
+      - MIDDLEWARE_SERVER_SECURITY_CORS=http://localhost:3000
+      - MIDDLEWARE_SERVER_SECURITY_JWT_EXPIRATION=1d
+      - MIDDLEWARE_SERVER_SECURITY_JWT_SECRETKEY=/4tQKjotNbMWbnkUERGqwLK2EXUIIoTGh2CgK/H2tAw=
+      - MIDDLEWARE_SERVER_MAIL_HOST=smtp.gmail.com
+      - MIDDLEWARE_SERVER_MAIL_PORT=587
+      - MIDDLEWARE_SERVER_MAIL_USERNAME=kamil.triscik@gmail.com
+      - MIDDLEWARE_SERVER_MAIL_PASSWORD=*******
+      - MIDDLEWARE_SERVER_MAIL_FROM=no-reply@llm.cz
+      - MIDDLEWARE_SERVER_MAIL_PROCESSOR_DELAY=600
+      - MIDDLEWARE_SERVER_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      - MIDDLEWARE_SERVER_LOGGING_DIRECTORY=/var/llm/logs
+      - MIDDLEWARE_SERVER_LOGGING_LEVEL=INFO
+      - MIDDLEWARE_SERVER_SSL_ENABLED=true
+      - MIDDLEWARE_SERVER_SSL_KEYSTORETYPE=PKCS12
+      - MIDDLEWARE_SERVER_SSL_KEYSTORE=/var/llm/https/llm_ss.p12
+      - MIDDLEWARE_SERVER_SSL_KEYSTOREPASSWORD=*******
+      - MIDDLEWARE_SERVER_SSL_KEYALIAS=llm_ss
+      - MIDDLEWARE_SERVER_TRUST_STORE=/var/llm/https/llm_ss.p12
+      - MIDDLEWARE_SERVER_TRUST_STORE_PASSWORD=******
+    depends_on:
+      - db
+    volumes:
+      - /home/kamil/llmlogs:/var/llm/logs
+      - /home/kamil/llmtemp:/var/llm/llmtemp
+      - /home/kamil/https:/var/llm/https
+      - /home/kamil/resources:/var/llm/resources
+
+  llm-ui:
+    image: llmiddleware/llm_ui:latest
+    container_name: LLM.Frontend
+    links:
+      - llm-middleware
+    expose:
+      - 80
+    ports:
+      - "8081:80"
+    depends_on:
+      - llm-middleware
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    links:
+      - llm-middleware
+    ports:
+      - "9090:9090"
+    depends_on:
+      - llm-middleware
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=monitoring
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    links:
+      - prometheus
+    restart: always
+
+volumes:
+  pgdata: {}
+  prometheus_data: {}
+  grafana_data: {}
+
+

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+    <springProperty scope="context" name="logsDirectory" source="middleware.it.logging.directory"/>
+    <springProperty scope="context" name="maxLogSize" source="middleware.it.logging.max-file-size" defaultValue="20MB"/>
+    <springProperty scope="context" name="maxLogAge" source="middleware.it.logging.max-file-age" defaultValue="30"/>
+    <springProperty scope="context" name="maxLogsSize" source="middleware.it.logging.max-logs-size" defaultValue="10GB"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{yyyy-MM-dd HH:mm:ss} - %-5level - %-50logger{35} - %msg%n
+            </Pattern>
+        </layout>
+    </appender>
+
+    <appender name="FILE-THREAD" class="ch.qos.logback.classic.sift.SiftingAppender">
+
+        <discriminator>
+            <key>objectId</key>
+            <defaultValue>app</defaultValue>
+        </discriminator>
+
+        <sift>
+            <appender name="FILE-${objectId}" class="ch.qos.logback.core.FileAppender">
+                <file>${logsDirectory}/${objectId}.log</file>
+                <append>true</append>
+
+                <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                    <fileNamePattern>${logsDirectory}/${objectId}.%i.log</fileNamePattern>
+                    <maxFileSize>${maxLogSize}</maxFileSize>
+                    <maxHistory>${maxLogAge}</maxHistory>
+                    <totalSizeCap>${maxLogsSize}</totalSizeCap>
+                </rollingPolicy>
+
+<!--                <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">-->
+<!--                    <fileNamePattern>${logsDirectory}/${objectId}.%i.log</fileNamePattern>-->
+<!--                    <minIndex>1</minIndex>-->
+<!--                    <maxIndex>${maxLogIndex}</maxIndex>-->
+<!--                </rollingPolicy>-->
+
+<!--                <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">-->
+<!--                    <maxFileSize>${maxLogSize}MB</maxFileSize>-->
+<!--                </triggeringPolicy>-->
+
+                <encoder>
+                    <Pattern>
+                        %d{yyyy-MM-dd HH:mm:ss} - %-5level - %-50logger{35} - %msg%n
+                    </Pattern>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
+    <logger name="com.pbs.middleware" level="debug"
+            additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE-THREAD" />
+    </logger>
+
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE-THREAD" />
+        </root>
+    </springProfile>
+
+    <springProfile name="docker">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE-THREAD" />
+        </root>
+    </springProfile>
+</configuration>

@@ -1,0 +1,30 @@
+{
+  "resources": {
+    "walltime": "1:0:0",
+    "customResources": {},
+    "chunks": [
+      {
+        "id": "1",
+        "count": 1,
+        "ncpus": 1,
+        "mem": "4gb",
+        "customResources": {}
+      }
+    ]
+  },
+  "queue": null,
+  "variables": {},
+  "workdir": "/home/kamil/",
+  "jobScript": "./script.sh",
+  "qsubPrefix": null,
+  "qsubSuffix": null,
+  "stdout": "out.log",
+  "stderr": "err.log",
+  "arguments": [],
+  "jobName": "jobx",
+  "description": "string",
+  "group": "g1",
+  "connection": "Thebes",
+  "handleStatusScript": "sc1",
+  "templateId": "temp1"
+}

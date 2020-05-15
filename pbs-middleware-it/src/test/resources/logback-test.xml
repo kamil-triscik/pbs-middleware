@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{yyyy-MM-dd HH:mm:ss} - %-5level - %-50logger{35} - %msg%n
+            </Pattern>
+        </layout>
+    </appender>
+
+
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
+    </springProfile>
+</configuration>

@@ -1,0 +1,4 @@
+#mvn clean spring-boot:run -e -X -Dpmd.skip=true -Dspring.profiles.active=kamil -Dspring.config.location=classpath:/application.properties,classpath:/application-kamil.properties
+#mvn clean spring-boot:run -Dpmd.skip=true -Dspring.profiles.active=kamil -Dspring.config.location=classpath:/application.properties,classpath:/application-kamil.properties
+java -Djava.security.egd=file:/dev/./urandom -jar -Dspring.profiles.active=kamil -Dspring.config.location=classpath:/application.properties,classpath:/application-kamil.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5004 ./target/LLMiddlewareServer.jar
+#java -jar -Dspring.profiles.active=kamil -Dspring.config.location=classpath:/application.properties,classpath:/application-kamil.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5003 ./jr/LLMiddlewareServer.jar

@@ -1,0 +1,9 @@
+middleware.server.logging.max-file-size
+middleware.server.logging.max-file-age
+
+middleware.server.logging.max-index
+middleware.server.logging.clearing.enabled
+middleware.server.logging.clearing.days
+middleware.server.logging.clearing.cron
+
+test logback
