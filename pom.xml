@@ -43,7 +43,7 @@
         <!--API-->
         <feign.version>10.6.0</feign.version>
         <feign.spring.version>3.8.0</feign.spring.version>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.10.5.1</jackson.version>
 
         <!--OTHER-->
         <swagger.version>2.9.2</swagger.version>
